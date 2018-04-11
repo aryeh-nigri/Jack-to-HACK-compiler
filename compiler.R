@@ -60,6 +60,9 @@ functionVM <- function(arg1, arg2, output){
 ## Invoke function g(arg1), after n(arg2) arguments have been pushed onto the stack
 callCounter <- 0 ## counter to handle multiple function calls
 call <- function(arg1, arg2, output){
+
+  callCounter <- callCounter + 1 ## callCounter++
+
   writeLines(c(
                paste("@", arg1, ".RETURN_ADDRESS", callCounter, sep = ""),
                "D=A",
@@ -112,13 +115,72 @@ call <- function(arg1, arg2, output){
                "0;JMP",
                paste("(", arg1, ".RETURN_ADDRESS", callCounter, ")", sep = "")
                ), output)
-
-  callCounter <- callCounter + 1
 }
 
 ## Terminate execution and return control to the calling function
 returnVM <- function(output){
-
+  writeLines(c(
+               # FRAME = LCL
+               "@LCL",
+               "D=M",
+               "@R13",
+               "M=D",
+               # RET = *(FRAME - 5)
+               "D=D-1",
+               "D=D-1",
+               "D=D-1",
+               "D=D-1",
+               "D=D-1",
+               "@R14",
+               "M=D",
+               # *ARG = pop()
+               "@SP",
+               "M=A",
+               "D=M",
+               "@ARG",
+               "A=M",
+               #*ARG = pop()
+               "M=D",
+               "@ARG",
+               "D=M",
+               "@SP",
+               "M=A",
+               # SP = ARG + 1
+               "M=D+1",
+               "@R13",
+               "D=M",
+               # THAT = FRAME - 1
+               "@THAT",
+               "M=D-1",
+               "A=D",
+               "D=M",
+               "@THIS",
+               "D=M-1",
+               # FRAME - 2
+               "D=D-1",
+               "A=D",
+               "D=M",
+               "@ARG",
+               "D=M-1",
+               "D=D-1",
+               # FRAME - 3
+               "D=D-1",
+               "A=D",
+               "D=M",
+               "@LCL",
+               "D=M-1",
+               "D=D-1",
+               "D=D-1",
+               # FRAME - 4
+               "D=D-1",
+               "A=D",
+               "D=M",
+               "@R14",
+               "D=M",
+               # GOTO RET
+               "@D",
+               "0;JMP"
+              ), output)
 }
 
 ################################################# FUNCTION CALLING COMMANDS #################################################
@@ -132,40 +194,31 @@ push <- function(arg1, arg2, output){
   switch (arg1,
           "constant"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "local"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@LCL", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@LCL", "A=M", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "argument"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@ARG", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@ARG", "A=M", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "this"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THIS", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THIS", "A=M", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "that"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THAT", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THAT", "A=M", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "temp"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@5", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@5", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "static"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@16", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-            #writeLines(c(paste("@", arg2, sep = ""), "D=A", "@16", "A=D+A", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
           },
           "pointer"={
             if(arg2 == "0"){
               writeLines(c("@THIS", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-              #writeLines(c("@THIS", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
             }
             else if(arg2 == "1"){
               writeLines(c("@THAT", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
-              #writeLines(c("@THAT", "D=M", "@0", "M=M+1", "A=M-1", "M=D"), output)
             }
           }
   )
@@ -195,11 +248,9 @@ pop <- function(arg1, arg2, output){
           "pointer"={
             if(arg2 == "0"){
               writeLines(c("@SP", "M=M-1", "A=M", "D=M", "@THIS", "M=D"), output)
-              #writeLines(c("@0", "M=M-1", "A=M", "D=M", "@THIS", "M=D"), output)
             }
             else if(arg2 == "1"){
               writeLines(c("@SP", "M=M-1", "A=M", "D=M", "@THAT", "M=D"), output)
-              #writeLines(c("@0", "M=M-1", "A=M", "D=M", "@THAT", "M=D"), output)
             }
           }
   )
@@ -214,25 +265,21 @@ pop <- function(arg1, arg2, output){
 ## function add to stack
 add <- function(output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M+D"), output)
-  #writeLines(c("@0", "M=M-1", "A=M", "D=M", "A=A-1", "M=M+D"), output)
 }
 
 ## function sub to stack
 sub <- function(output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M-D"), output)
-  #writeLines(c("@0", "M=M-1", "A=M", "D=M", "A=A-1", "M=M-D"), output)
 }
 
 ## function neg to stack
 neg <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "M=-M"), output)
-  #writeLines(c("@0", "A=M", "A=A-1", "M=-M"), output)
 }
 
 ## function not to stack
 not <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "M=!M"), output)
-  #writeLines(c("@0", "A=M", "A=A-1", "M=!M"), output)
 }
 
 ## function eq to stack
@@ -242,7 +289,6 @@ eq <- function(lineNumber, output){
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
              paste("(TRUE", lineNumber, ")", sep = ""), "@SP", "A=M-1", "M=-1", 
              paste("(FALSE", lineNumber, ")", sep = "")), output)
-  #writeLines(c("@0", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", paste("@TRUE", lineNumber, sep = ""), "D;JEQ", "@0", "A=M-1", "M=0", paste("@FALSE", lineNumber, sep = ""), "0;JEQ", paste("(TRUE", lineNumber, ")", sep = ""), "@0", "A=M-1", "M=-1", paste("(FALSE", lineNumber, ")", sep = "")), output)
 }
 
 ## function gt to stack
@@ -252,7 +298,6 @@ gt <- function(lineNumber, output){
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
              paste("(TRUE", lineNumber, ")", sep = ""), "@SP", "A=M-1", "M=-1", 
              paste("(FALSE", lineNumber, ")", sep = "")), output)
-  #writeLines(c("@0", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", paste("@TRUE", lineNumber, sep = ""), "D;JGT", "@0", "A=M-1", "M=0", paste("@FALSE", lineNumber, sep = ""), "0;JEQ", paste("(TRUE", lineNumber, ")", sep = ""), "@0", "A=M-1", "M=-1", paste("(FALSE", lineNumber, ")", sep = "")), output)
 }
 
 ## function lt to stack
@@ -262,19 +307,16 @@ lt <- function(lineNumber, output){
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
              paste("(TRUE", lineNumber, ")", sep = ""), "@SP", "A=M-1", "M=-1", 
              paste("(FALSE", lineNumber, ")", sep = "")), output)
-  #  writeLines(c("@0", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", paste("@TRUE", lineNumber, sep = ""), "D;JLT", "@0", "A=M-1", "M=0", paste("@FALSE", lineNumber, sep = ""), "0;JEQ", paste("(TRUE", lineNumber, ")", sep = ""), "@0", "A=M-1", "M=-1", paste("(FALSE", lineNumber, ")", sep = "")), output)
 }
 
 ## function and to stack
 and <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "D=M", "A=A-1", "M=M&D", "@SP", "M=M-1"), output)
-  #writeLines(c("@0", "A=M", "A=A-1", "D=M", "A=A-1", "M=M&D", "@0", "M=M-1"), output)
 }
 
 ## function or to stack
 or <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "D=M", "A=A-1", "M=M|D", "@SP", "M=M-1"), output)
-  #writeLines(c("@0", "A=M", "A=A-1", "D=M", "A=A-1", "M=M|D", "@0", "M=M-1"), output)
 }
 
 ################################################# ARITHMETIC / BOOLEAN COMMANDS #################################################
