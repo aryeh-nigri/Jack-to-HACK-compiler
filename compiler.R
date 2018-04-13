@@ -40,146 +40,65 @@ ifGoto <- function(fileName, arg1, output){
 ## Here starts a function named f(arg1), which has k(arg2) local variables
 functionVM <- function(arg1, arg2, output){
   writeLines(c(
+               "// label f",
                paste("(", arg1, ")", sep = ""),
-               paste("@", arg2, sep = ""),
-               "D=A",
-               paste("@", arg1, ".END", sep = ""),
-               "D;JEQ",
-               paste("(", arg1, ".LOOP)", sep = ""),
-               "@SP",
-               "A=M",
-               "M=0",
-               "@SP",
-               "M=M+1",
-               paste("@", arg1, ".LOOP", sep = ""),
+               "// אתחול המשתנים המקומיים",
+               paste("@", arg2, sep = ""), "D=A", paste("@", arg1, ".END", sep = ""), "D;JEQ",
+               "// (k != 0) קפיצה אם שקר",
+               paste("(", arg1, ".LOOP)", sep = ""), "@SP", "A=M", "M=0", "@SP", "M=M+1", paste("@", arg1, ".LOOP", sep = ""),
+               "//(k != 0)קפיצה כל עוד",
                "D=D-1;JNE",
+               "// (k == 0)סיום אם אמת",
                paste("(", arg1, ".END)", sep = "")
                ), output)
 }
 
 ## Invoke function g(arg1), after n(arg2) arguments have been pushed onto the stack
-callCounter <- 0 ## counter to handle multiple function calls
-call <- function(arg1, arg2, output){
-
-  callCounter <- callCounter + 1 ## callCounter++
-
+call <- function(arg1, arg2, output, counter){
   writeLines(c(
-               paste("@", arg1, ".RETURN_ADDRESS", callCounter, sep = ""),
-               "D=A",
-               "@SP",
-               "A=M",
-               "M=D",
-               "@SP",
-               "M=M+1",
-               "@LCL",
-               "D=M",
-               "@SP",
-               "A=M",
-               "M=D",
-               "@SP",
-               "M=M+1",
-               "@ARG",
-               "D=M",
-               "@SP",
-               "A=M",
-               "M=D",
-               "@SP",
-               "M=M+1",
-               "@THIS",
-               "D=M",
-               "@SP",
-               "A=M",
-               "M=D",
-               "@SP",
-               "M=M+1",
-               "@THAT",
-               "D=M",
-               "@SP",
-               "A=M",
-               "M=D",
-               "@SP",
-               "M=M+1",
-               "@SP",
-               "D=A",
-               paste("@", strtoi(arg2) + 5, sep = ""), ## arg2 + 5
-               "D=D+A",
-               "@SP",
-               "D=M-D",
-               "@ARG",
-               "M=D",
-               "@SP",
-               "D=M",
-               "@LCL",
-               "M=D",
-               "@arg1",
-               "0;JMP",
-               paste("(", arg1, ".RETURN_ADDRESS", callCounter, ")", sep = "")
+               "// push return-address",
+               paste("@", arg1, ".RETURN_ADDRESS", counter, sep = ""), "D=A", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+               "// push LCL",
+               "@LCL", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+               "// push ARG",
+               "@ARG", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+               "// push THIS",
+               "@THIS", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+               "// push THAT",
+               "@THAT", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
+               "// ARG = SP-n-5",
+               "@SP", "D=M", paste("@", strtoi(arg2) - 5, sep = ""), "D=D-A", "@ARG", "M=D",
+               "// LCL = SP",
+               "@SP", "D=M", "@LCL", "M=D",
+               "// goto f",
+               paste("@", arg1, sep = ""), "0;JMP",
+               "// label return-address",
+               paste("(", arg1, ".RETURN_ADDRESS", counter, ")", sep = "")
                ), output)
 }
 
 ## Terminate execution and return control to the calling function
 returnVM <- function(output){
   writeLines(c(
-               # FRAME = LCL
-               "@LCL",
-               "D=M",
-               "@R13",
-               "M=D",
-               # RET = *(FRAME - 5)
-               "D=D-1",
-               "D=D-1",
-               "D=D-1",
-               "D=D-1",
-               "D=D-1",
-               "@R14",
-               "M=D",
-               # *ARG = pop()
-               "@SP",
-               "M=A",
-               "D=M",
-               "@ARG",
-               "A=M",
-               #*ARG = pop()
-               "M=D",
-               "@ARG",
-               "D=M",
-               "@SP",
-               "M=A",
-               # SP = ARG + 1
-               "M=D+1",
-               "@R13",
-               "D=M",
-               # THAT = FRAME - 1
-               "@THAT",
-               "M=D-1",
-               "A=D",
-               "D=M",
-               "@THIS",
-               "D=M-1",
-               # FRAME - 2
-               "D=D-1",
-               "A=D",
-               "D=M",
-               "@ARG",
-               "D=M-1",
-               "D=D-1",
-               # FRAME - 3
-               "D=D-1",
-               "A=D",
-               "D=M",
-               "@LCL",
-               "D=M-1",
-               "D=D-1",
-               "D=D-1",
-               # FRAME - 4
-               "D=D-1",
-               "A=D",
-               "D=M",
-               "@R14",
-               "D=M",
-               # GOTO RET
-               "@D",
-               "0;JMP"
+               "// FRAME = LCL",
+               "@LCL", "D=M",
+               "// RET = *(FRAME - 5)",
+               "// RAM[13] = (LOCAL - 5)",
+               "@5", "A=D-A", "D=M", "@13", "M=D",
+               "// *ARG = pop()",
+               "@SP", "M=M-1", "A=M", "D=M", "@ARG", "A=M", "M=D",
+               "// SP = ARG + 1",
+               "@ARG", "D=M", "@SP", "M=D+1",
+               "// THAT = *(FRAME - 1)",
+               "@LCL", "M=M-1", "A=M", "D=M", "@THAT", "M=D",
+               "// THIS = *(FRAME - 2)",
+               "@LCL", "M=M-1", "A=M", "D=M", "@THIS", "M=D",
+               "// ARG = *(FRAME - 3)",
+               "@LCL", "M=M-1", "A=M", "D=M", "@ARG", "M=D",
+               "// LCL = *(FRAME - 4)",
+               "@LCL", "M=M-1", "A=M", "D=M", "@LCL", "M=D",
+               "// goto RET",
+               "@13", "A=M", "0;JMP"
               ), output)
 }
 
@@ -358,10 +277,12 @@ for(currentFile in files){
   linesInFile <- readLines(myFile) ## reads every line from the current file
   ## iterate throw every line
   lineNumber <- 1 ## number line to pass when a function creates label
+  callCounter <- 0 ## counter to handle multiple function calls
   for(currentLine in linesInFile){
 
     if(!startsWith(currentLine, "//")){ ## write every command as a comment
-      writeLines(paste("//", currentLine), currentOutputFile)
+      writeLines(paste("//", toupper(currentLine)), currentOutputFile)
+      #writeLines(paste("//", currentLine), currentOutputFile)
     }
 
     wordsInLine <- strsplit(currentLine, " ")[[1]] ## splits the word in the line by 1 white space
@@ -371,7 +292,8 @@ for(currentFile in files){
              functionVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
            },
            "call"={
-             call(wordsInLine[2], wordsInLine[3], currentOutputFile)
+             call(wordsInLine[2], wordsInLine[3], currentOutputFile, callCounter)
+             callCounter <- callCounter + 1 ## callCounter++
            },
            "return"={
              returnVM(currentOutputFile)
