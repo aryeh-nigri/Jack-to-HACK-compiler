@@ -10,7 +10,7 @@ sysInit <- function(output){
   writeLines(c("@256", "D=A", "@SP", "M=D"), output)
   # call to the code that implement function call
   # with function name "Sys.init" and number of arguments is 0
-  call("Sys.init", "0", output)
+  call("Sys.init", "0", output, 0)
 }
 
 #region program flow commands
@@ -340,8 +340,8 @@ for(currentFile in files){
            "or"={
              or(currentOutputFile)
            },
-           "//"={
-             writeLines(currentLine, currentOutputFile)
+           "//"={ ## optional case, may be removed if wanted
+             writeLines(currentLine, currentOutputFile) ## write the comments on the .vm file
            },
            ## default
            {})
