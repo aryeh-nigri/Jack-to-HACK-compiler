@@ -5,29 +5,31 @@
 ################################################# FUNCTIONS #################################################
 
 ## Initialization. This asm code should appear as the first lines of each asm file.
-sysInit <- function(output){
+sysInit <- function(output, haveSysInit){
   # Initialize the SP to 256
   writeLines(c("@256", "D=A", "@SP", "M=D"), output)
   # call to the code that implement function call
   # with function name "Sys.init" and number of arguments is 0
-  call("Sys.init", "0", output, 0)
+  if(haveSysInit == TRUE){
+    callVM("Sys.init", "0", output, 0)
+  }
 }
 
 #region program flow commands
 ################################################# PROGRAM FLOW COMMANDS #################################################
 
 ## A declaration of a label c, inside current file FileName
-label <- function(fileName, arg1, output){
+labelVM <- function(fileName, arg1, output){
   writeLines(c(paste("(", fileName, ".", arg1, ")", sep = "")), output)
 }
 
 ## Jump to label c that was declared in current file FileName
-goto <- function(fileName, arg1, output){
+gotoVM <- function(fileName, arg1, output){
   writeLines(c(paste("@", fileName, ".", arg1, sep = ""), "0;JMP"), output)
 }
 
 ## pop the topmost stack element and if it is not zero jump to label c in current file FileName
-ifGoto <- function(fileName, arg1, output){
+ifGotoVM <- function(fileName, arg1, output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", paste("@", fileName, ".", arg1, sep = ""), "D;JNE"), output)
 }
 
@@ -54,7 +56,7 @@ functionVM <- function(arg1, arg2, output){
 }
 
 ## Invoke function g(arg1), after n(arg2) arguments have been pushed onto the stack
-call <- function(arg1, arg2, output, counter){
+callVM <- function(arg1, arg2, output, counter){
   writeLines(c(
                "// push return-address",
                paste("@", arg1, ".RETURN_ADDRESS", counter, sep = ""), "D=A", "@SP", "A=M", "M=D", "@SP", "M=M+1",
@@ -109,7 +111,7 @@ returnVM <- function(output){
 ################################################# MEMORY ACCESS COMMANDS #################################################
 
 ## function push to stack
-push <- function(arg1, arg2, output){
+pushVM <- function(arg1, arg2, output){
   switch (arg1,
           "constant"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@SP", "M=M+1", "A=M-1", "M=D"), output)
@@ -144,7 +146,7 @@ push <- function(arg1, arg2, output){
 }
 
 ## function pop to stack
-pop <- function(arg1, arg2, output){
+popVM <- function(arg1, arg2, output){
   switch (arg1,
           "local"={
             writeLines(c("@LCL", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
@@ -182,27 +184,27 @@ pop <- function(arg1, arg2, output){
 ################################################# ARITHMETIC / BOOLEAN COMMANDS #################################################
 
 ## function add to stack
-add <- function(output){
+addVM <- function(output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M+D"), output)
 }
 
 ## function sub to stack
-sub <- function(output){
+subVM <- function(output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "M=M-D"), output)
 }
 
 ## function neg to stack
-neg <- function(output){
+negVM <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "M=-M"), output)
 }
 
 ## function not to stack
-not <- function(output){
+notVM <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "M=!M"), output)
 }
 
 ## function eq to stack
-eq <- function(lineNumber, output){
+eqVM <- function(lineNumber, output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", 
              paste("@TRUE", lineNumber, sep = ""), "D;JEQ", "@SP", "A=M-1", "M=0", 
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
@@ -211,7 +213,7 @@ eq <- function(lineNumber, output){
 }
 
 ## function gt to stack
-gt <- function(lineNumber, output){
+gtVM <- function(lineNumber, output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", 
              paste("@TRUE", lineNumber, sep = ""), "D;JGT", "@SP", "A=M-1", "M=0", 
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
@@ -220,7 +222,7 @@ gt <- function(lineNumber, output){
 }
 
 ## function lt to stack
-lt <- function(lineNumber, output){
+ltVM <- function(lineNumber, output){
   writeLines(c("@SP", "M=M-1", "A=M", "D=M", "A=A-1", "A=M", "D=A-D", 
              paste("@TRUE", lineNumber, sep = ""), "D;JLT", "@SP", "A=M-1", "M=0", 
              paste("@FALSE", lineNumber, sep = ""), "0;JEQ", 
@@ -229,12 +231,12 @@ lt <- function(lineNumber, output){
 }
 
 ## function and to stack
-and <- function(output){
+andVM <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "D=M", "A=A-1", "M=M&D", "@SP", "M=M-1"), output)
 }
 
 ## function or to stack
-or <- function(output){
+orVM <- function(output){
   writeLines(c("@SP", "A=M", "A=A-1", "D=M", "A=A-1", "M=M|D", "@SP", "M=M-1"), output)
 }
 
@@ -244,9 +246,14 @@ or <- function(output){
 ################################################# FUNCTIONS #################################################
 #endregion
 
+#region global variables
+booleanCounter <- 0
+callCounter <- 0
+#endregion
+
 #region main functions
 
-chooseFunction <- function(currentLine, currentOutputFile, callCounter, currentFileName, booleanCounter){
+chooseFunction <- function(currentLine, currentOutputFile, currentFileName){
     wordsInLine <- strsplit(currentLine, " ")[[1]] ## splits the word in the line by 1 white space
     
     switch(wordsInLine[1], ## switch with the first word, and goes to right function
@@ -254,56 +261,56 @@ chooseFunction <- function(currentLine, currentOutputFile, callCounter, currentF
              functionVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
            },
            "call"={
-             call(wordsInLine[2], wordsInLine[3], currentOutputFile, callCounter)
+             callVM(wordsInLine[2], wordsInLine[3], currentOutputFile, counter=callCounter)
              callCounter <- callCounter + 1 ## callCounter++
            },
            "return"={
              returnVM(currentOutputFile)
            },
            "label"={
-             label(currentFileName,wordsInLine[2], currentOutputFile)
+             labelVM(currentFileName,wordsInLine[2], currentOutputFile)
            },
            "goto"={
-             goto(currentFileName, wordsInLine[2] ,currentOutputFile)
+             gotoVM(currentFileName, wordsInLine[2] ,currentOutputFile)
            },
            "if-goto"={
-             ifGoto(currentFileName, wordsInLine[2], currentOutputFile)
+             ifGotoVM(currentFileName, wordsInLine[2], currentOutputFile)
            },
            "push"={
-             push(wordsInLine[2], wordsInLine[3], currentOutputFile)
+             pushVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
            },
            "pop"={
-             pop(wordsInLine[2], wordsInLine[3], currentOutputFile)
+             popVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
            },
            "add"={
-             add(currentOutputFile)
+             addVM(currentOutputFile)
            },
            "sub"={
-             sub(currentOutputFile)
+             subVM(currentOutputFile)
            },
            "neg"={
-             neg(currentOutputFile)
+             negVM(currentOutputFile)
            },
            "not"={
-             not(currentOutputFile)
+             notVM(currentOutputFile)
            },
            "eq"={
-             eq(booleanCounter, currentOutputFile)
+             eqVM(lineNumber=booleanCounter, currentOutputFile)
              booleanCounter <- booleanCounter + 1 ## booleanCounter++
            },
            "gt"={
-             gt(booleanCounter, currentOutputFile)
+             gtVM(lineNumber=booleanCounter, currentOutputFile)
              booleanCounter <- booleanCounter + 1 ## booleanCounter++
            },
            "lt"={
-             lt(booleanCounter, currentOutputFile)
+             ltVM(lineNumber=booleanCounter, currentOutputFile)
              booleanCounter <- booleanCounter + 1 ## booleanCounter++
            },
            "and"={
-             and(currentOutputFile)
+             andVM(currentOutputFile)
            },
            "or"={
-             or(currentOutputFile)
+             orVM(currentOutputFile)
            },
            "//"={ ## optional case, may be removed if wanted
              writeLines(currentLine, currentOutputFile) ## write the comments on the .vm file
@@ -331,26 +338,42 @@ searchFiles <- function(pathToSearch){
       file.create(outputFile)
       currentOutputFile <- file(outputFile, "w")
 
+      if(length(files) > 1){
+        sysInit(currentOutputFile, TRUE) ## initialization function with call to sys.init
+      }else{ ## only 1 file, no need to sys.init
+        sysInit(currentOutputFile, FALSE) ## initialization function without call to sys.init
+      }
+
       ## iterate throw every file, and write the correct machine translation
       for(file in files){
           fileName <- basename(file)
           currentFile <- file(file.path(folder, file), "r")
           lines <- readLines(currentFile)
-          booleanCounter <- 0
-          callCounter <- 0
-
-          sysInit(currentOutputFile) ## initialization function
 
           for(line in lines){
               if(!startsWith(line, "//")){ ## write every command as a comment
                 writeLines(paste("//", toupper(line)), currentOutputFile)
               }
-              chooseFunction(line, currentOutputFile, callCounter, fileName, booleanCounter)
+              chooseFunction(line, currentOutputFile, fileName)
           }
           close(currentFile)
       }
       close(currentOutputFile)
+      booleanCounter <- 0
+      callCounter <- 0
   }
+}
+
+main <- function(passedPath){
+
+  filesPath <- gsub("\\\\", "/", passedPath[6])
+  #filesPath <- file.path(vectorPath)
+
+  if(length(filesPath) == 0){ ## if no arguments were passed
+    filesPath <- getwd()      ## use the current directory
+  }
+
+  searchFiles(filesPath)
 }
 
 #endregion
@@ -358,17 +381,7 @@ searchFiles <- function(pathToSearch){
 #region main
 ################################################# MAIN #################################################
 
-passedPath <- commandArgs()
-#vectorPath <- strsplit(passedPath[6], "\\\\")#[[1]]
-
-filesPath <- gsub("\\\\", "/", passedPath[6])
-#filesPath <- file.path(vectorPath)
-
-if(length(filesPath) == 0){ ## if no arguments were passed
-  filesPath <- getwd()      ## use the current directory
-}
-
-searchFiles(filesPath)
+main(commandArgs())
 
 ################################################# MAIN #################################################
 #endregion
