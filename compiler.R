@@ -1,4 +1,4 @@
-## Arieh Nigri
+## Aryeh Nigri
 
 
 #region functions
@@ -246,11 +246,6 @@ orVM <- function(output){
 ################################################# FUNCTIONS #################################################
 #endregion
 
-#region global variables
-booleanCounter <- 0
-callCounter <- 0
-#endregion
-
 #region main functions
 
 chooseFunction <- function(currentLine, currentOutputFile, currentFileName){
@@ -262,7 +257,7 @@ chooseFunction <- function(currentLine, currentOutputFile, currentFileName){
            },
            "call"={
              callVM(wordsInLine[2], wordsInLine[3], currentOutputFile, counter=callCounter)
-             callCounter <- callCounter + 1 ## callCounter++
+             callCounter <<- callCounter + 1 ## callCounter++
            },
            "return"={
              returnVM(currentOutputFile)
@@ -296,15 +291,15 @@ chooseFunction <- function(currentLine, currentOutputFile, currentFileName){
            },
            "eq"={
              eqVM(lineNumber=booleanCounter, currentOutputFile)
-             booleanCounter <- booleanCounter + 1 ## booleanCounter++
+             booleanCounter <<- booleanCounter + 1 ## booleanCounter++
            },
            "gt"={
              gtVM(lineNumber=booleanCounter, currentOutputFile)
-             booleanCounter <- booleanCounter + 1 ## booleanCounter++
+             booleanCounter <<- booleanCounter + 1 ## booleanCounter++
            },
            "lt"={
              ltVM(lineNumber=booleanCounter, currentOutputFile)
-             booleanCounter <- booleanCounter + 1 ## booleanCounter++
+             booleanCounter <<- booleanCounter + 1 ## booleanCounter++
            },
            "and"={
              andVM(currentOutputFile)
@@ -344,6 +339,9 @@ searchFiles <- function(pathToSearch){
         sysInit(currentOutputFile, FALSE) ## initialization function without call to sys.init
       }
 
+      booleanCounter <<- 0
+      callCounter <<- 0
+
       ## iterate throw every file, and write the correct machine translation
       for(file in files){
           fileName <- basename(file)
@@ -359,8 +357,6 @@ searchFiles <- function(pathToSearch){
           close(currentFile)
       }
       close(currentOutputFile)
-      booleanCounter <- 0
-      callCounter <- 0
   }
 }
 
