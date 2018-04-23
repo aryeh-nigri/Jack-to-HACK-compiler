@@ -68,8 +68,8 @@ callVM <- function(arg1, arg2, output, counter){
                "@THIS", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
                "// push THAT",
                "@THAT", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1",
-               "// ARG = SP-n-5",
-               "@SP", "D=M", paste("@", strtoi(arg2) - 5, sep = ""), "D=D-A", "@ARG", "M=D",
+               "// ARG = SP-n-5", ## SP - (n+5)
+               "@SP", "D=M", paste("@", strtoi(arg2) + 5, sep = ""), "D=D-A", "@ARG", "M=D",
                "// LCL = SP",
                "@SP", "D=M", "@LCL", "M=D",
                "// goto f",
