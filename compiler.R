@@ -111,28 +111,29 @@ returnVM <- function(output){
 ################################################# MEMORY ACCESS COMMANDS #################################################
 
 ## function push to stack
-pushVM <- function(arg1, arg2, output){
+pushVM <- function(arg1, arg2, fileName, output){
   switch (arg1,
           "constant"={
             writeLines(c(paste("@", arg2, sep = ""), "D=A", "@SP", "M=M+1", "A=M-1", "M=D"), output)
           },
           "local"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@LCL", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@LCL", "A=M+D", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1"), output)
           },
           "argument"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@ARG", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@ARG", "A=M+D", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1"), output)
           },
           "this"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THIS", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THIS", "A=M+D", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1"), output)
           },
           "that"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THAT", "A=M", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@THAT", "A=M+D", "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1"), output)
           },
           "temp"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@5", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", strtoi(arg2) + 5, sep = ""), "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            ##writeLines(c(paste("@", arg2, sep = ""), "D=A", "@5", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
           },
           "static"={
-            writeLines(c(paste("@", arg2, sep = ""), "D=A", "@16", "A=D+A", "D=M", "@SP", "M=M+1", "A=M-1", "M=D"), output)
+            writeLines(c(paste("@", fileName, ".", arg2, sep=""), "D=M", "@SP", "A=M", "M=D", "@SP", "M=M+1"), output)
           },
           "pointer"={
             if(arg2 == "0"){
@@ -146,25 +147,26 @@ pushVM <- function(arg1, arg2, output){
 }
 
 ## function pop to stack
-popVM <- function(arg1, arg2, output){
+popVM <- function(arg1, arg2, fileName, output){
   switch (arg1,
           "local"={
-            writeLines(c("@LCL", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@LCL", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@R13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@R13", "A=M", "M=D"), output)
           },
           "argument"={
-            writeLines(c("@ARG", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@ARG", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@R13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@R13", "A=M", "M=D"), output)
           },
           "this"={
-            writeLines(c("@THIS", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@THIS", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@R13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@R13", "A=M", "M=D"), output)
           },
           "that"={
-            writeLines(c("@THAT", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@THAT", "D=M", paste("@", arg2, sep = ""), "D=D+A", "@R13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@R13", "A=M", "M=D"), output)
           },
           "temp"={
-            writeLines(c("@5", "D=A", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@SP", "A=M-1", "D=M", paste("@", strtoi(arg2) + 5, sep = ""), "M=D", "@SP", "M=M-1"), output)
+            ##writeLines(c("@5", "D=A", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
           },
           "static"={
-            writeLines(c("@16", "D=A", paste("@", arg2, sep = ""), "D=D+A", "@13", "M=D", "@SP", "M=M-1", "A=M", "D=M", "@13", "A=M", "M=D"), output)
+            writeLines(c("@SP", "A=M-1", "D=M", paste("@", fileName, ".", arg2, sep=""), "M=D", "@SP", "M=M-1"), output)
           },
           "pointer"={
             if(arg2 == "0"){
@@ -272,10 +274,10 @@ chooseFunction <- function(currentLine, currentOutputFile, currentFileName){
              ifGotoVM(currentFileName, wordsInLine[2], currentOutputFile)
            },
            "push"={
-             pushVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
+             pushVM(wordsInLine[2], wordsInLine[3], currentFileName, currentOutputFile)
            },
            "pop"={
-             popVM(wordsInLine[2], wordsInLine[3], currentOutputFile)
+             popVM(wordsInLine[2], wordsInLine[3], currentFileName, currentOutputFile)
            },
            "add"={
              addVM(currentOutputFile)
