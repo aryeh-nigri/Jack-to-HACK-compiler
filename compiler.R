@@ -363,7 +363,7 @@ searchFiles <- function(pathToSearch){
 }
 
 main <- function(passedPath){
-
+  ##TODO rewrite this line to always get the argument correctly, now its only on vscode
   filesPath <- gsub("\\\\", "/", passedPath[6])
   #filesPath <- file.path(vectorPath)
 
