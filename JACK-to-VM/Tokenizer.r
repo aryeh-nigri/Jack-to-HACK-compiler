@@ -21,7 +21,7 @@ digitsRegex <- c('0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
 #endregion
 
 writeToXML <- function(tag, content, output){
-    print(paste(tag, content, sep=" : "))
+    # print(paste(tag, content, sep=" : "))
     writeLines(c(paste(paste("<", tag, ">", sep=""), content, paste("</", tag, ">", sep=""), sep=" ")), output)
 }
 
@@ -205,15 +205,13 @@ searchFiles <- function(pathToSearch){
 
 
 main <- function(passedPath){
-  ##TODO rewrite this line to always get the argument correctly, now its only on vscode
-  filesPath <- gsub("\\\\", "/", passedPath[6])
-  #filesPath <- file.path(vectorPath)
+  filesPath <- gsub("\\\\", "/", passedPath)
 
   if(length(filesPath) == 0){ ## if no arguments were passed
     filesPath <- getwd()      ## use the current directory
   }
-
+  
   searchFiles(filesPath)
 }
 
-main(commandArgs())
+main(commandArgs(trailingOnly=TRUE))

@@ -5,13 +5,7 @@
 
 #region GLOBAL VARIABLES
 
-keywords <- c("class", "constructor", "function", "method", "field", "static", "var",
-                        "int", "char", "boolean", "void", "true", "false", "null", "this", "let", "do", "if",
-                        "else", "while", "return")
-
-symbols <- c('{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', '|', '<', '>', '=', '~')
-
-op <- c('+', '-', '*', '/', '&', '|', '<', '>', '=')
+op <- c('+', '-', '*', '/', "&amp;", '|', "&lt;", "&gt;", '=')
 unaryOp <- c('-', '~')
 keywordConstant <- c("true", "false", "null", "this")
 
@@ -50,16 +44,6 @@ writeLinesToXML <- function(lines, index, numberOfLines, levelXML, output) {
 
 #region EXPRESSIONS
 
-writeUnaryOp <- function(lines, index, tagLevel, output){
-    index <- writeLinesToXML(lines, index, 1, tagLevel, output) ## symbol
-    return(index)
-}
-
-writeOp <- function(lines, index, tagLevel, output){
-    index <- writeLinesToXML(lines, index, 1, tagLevel, output) ## symbol
-    return(index)
-}
-
 writeExpressionList <- function(lines, index, tagLevel, output){
     writeToXML("expressionList", tagLevel, output)
     tagLevel <- tagLevel + 1
@@ -67,23 +51,21 @@ writeExpressionList <- function(lines, index, tagLevel, output){
     words <- strsplit(lines[index], " ")[[1]]
     word <- words[2]  ## word between the tags
 
-    if(word == ')'){   ## empty list
-        return(index) ## ?
-    }
+    if(word != ')'){   ## not empty list, ?
+        index <- writeExpression(lines, index, tagLevel, output) ## expression
 
-    index <- writeExpression(lines, index, tagLevel, output) ## expression
-
-    repeat{
-        words <- strsplit(lines[index], " ")[[1]]
-        word <- words[2]  ## word between the tags
-        if(word == ','){ ## (, expression)*
-            index <- writeLinesToXML(lines, index, 1, tagLevel, output) ## ,
-            index <- writeExpression(lines, index, tagLevel, output) ## expression
+        repeat{
+            words <- strsplit(lines[index], " ")[[1]]
+            word <- words[2]  ## word between the tags
+            if(word == ','){ ## (, expression)*
+                index <- writeLinesToXML(lines, index, 1, tagLevel, output) ## ,
+                index <- writeExpression(lines, index, tagLevel, output) ## expression
+            }
+            else{
+                break
+            }
         }
-        else{
-            break
-        }
-    }
+    }    
 
     tagLevel <- tagLevel - 1
     writeToXML("/expressionList", tagLevel, output)
@@ -336,7 +318,7 @@ writeStatements <- function(lines, index, tagLevel, output){
     repeat{
         words <- strsplit(lines[index], " ")[[1]]
         word <- words[2]  ## word between the tags
-        if(word == "let" | word == "if" | word == "while" | word == "do" | word == "return"){
+        if(word == "let" || word == "if" || word == "while" || word == "do" || word == "return"){
             index <- writeStatement(lines, index, tagLevel, output) ## statement*
         }
         else{
@@ -385,22 +367,20 @@ writeParameterList <- function(lines, index, tagLevel, output){
     words <- strsplit(lines[index], " ")[[1]]
     word <- words[2]  ## word between the tags
 
-    if(word == ')'){   ## empty list
-        return(index) ## ?
-    }
+    if(word != ')'){   ## not empty list, ?
+        index <- writeLinesToXML(lines, index, 2, tagLevel, output) ## type varName
 
-    index <- writeLinesToXML(lines, index, 2, tagLevel, output) ## type varName
-
-    repeat{
-        words <- strsplit(lines[index], " ")[[1]]
-        word <- words[2]  ## word between the tags
-        if(word == ','){
-            index <- writeLinesToXML(lines, index, 3, tagLevel, output) ## (, type varName)*
+        repeat{
+            words <- strsplit(lines[index], " ")[[1]]
+            word <- words[2]  ## word between the tags
+            if(word == ','){
+                index <- writeLinesToXML(lines, index, 3, tagLevel, output) ## (, type varName)*
+            }
+            else{
+                break
+            }
         }
-        else{
-            break
-        }
-    }
+    }    
 
     tagLevel <- tagLevel - 1
     writeToXML("/parameterList", tagLevel, output)
@@ -529,23 +509,6 @@ searchFiles <- function(pathToSearch){
           
           index <- 2   ## starts from the second line
           writeClass(lines, index, currentOutputFile)
-
-        #   ## iterate throw every line, and write every letter in a vector, adding \n at the end
-        #   for(line in lines){
-        #       words <- strsplit(line, " ")[[1]]
-        #       word <- words[2]  ## palavra entre as tags
-
-        #       switch(word, ## switch with the first word, and goes to right function
-        #         "class"={
-        #             functionVM(, , currentOutputFile)
-        #         },
-        #         "//"={ ## optional case, may be removed if wanted
-        #             writeLines(currentLine, currentOutputFile) ## write the comments on the .vm file
-        #         },
-        #         ## default
-        #         {})
-              
-        #   }
           
           close(currentFile)
           close(currentOutputFile)
@@ -553,19 +516,17 @@ searchFiles <- function(pathToSearch){
   }
 }
 
-
 main <- function(passedPath){
-  ##TODO rewrite this line to always get the argument correctly, now its only on vscode
-  filesPath <- gsub("\\\\", "/", passedPath[6])
-  #filesPath <- file.path(vectorPath)
+  filesPath <- gsub("\\\\", "/", passedPath)
 
   if(length(filesPath) == 0){ ## if no arguments were passed
     filesPath <- getwd()      ## use the current directory
   }
-
+  
   searchFiles(filesPath)
+
 }
 
 #endregion
 
-main(commandArgs())
+main(commandArgs(trailingOnly=TRUE))
