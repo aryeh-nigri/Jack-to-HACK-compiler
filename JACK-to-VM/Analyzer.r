@@ -16,7 +16,7 @@ keywordConstant <- c("true", "false", "null", "this")
 writeToXML <- function(content, levelXML, output) {
     spaces <- ""
     while(levelXML > 0){
-            spaces <- paste("   ", spaces, sep = "")
+            spaces <- paste("\t", spaces, sep = "")   ## tab spaces
             levelXML <- levelXML - 1
         }
 
