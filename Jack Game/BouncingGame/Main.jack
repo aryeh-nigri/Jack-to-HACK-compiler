@@ -1,0 +1,21 @@
+/**
+ * The Main class initializes a new Bouncing game and starts it.
+ */
+class Main {
+
+    /** Initializes a new game and starts it. */    
+    function void main() {
+        var BouncingGame game;
+        var int numOfBalls;
+
+        do Output.moveCursor(11, 12);
+        let numOfBalls = Keyboard.readInt("How many balls to create? ");
+        do Screen.clearScreen();
+
+        let game = BouncingGame.new(numOfBalls);
+        do game.run();
+	    do game.dispose();
+
+        return;
+    }
+}

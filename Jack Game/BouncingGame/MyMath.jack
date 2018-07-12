@@ -1,0 +1,163 @@
+class MyMath {
+
+    function int mod(int number, int m){
+        return number - (m * (number / m));
+    }
+
+    function int sin(int angle){
+        var int result, newAngle;
+
+        if(angle <91)
+        {//0 - 90
+            let newAngle = angle;
+            let result = MyMath.simpleSin(newAngle);
+        }else
+        {
+            if(angle < 181)
+            {// 91 - 180
+                let newAngle = angle - 90;
+                let newAngle = 90 - newAngle;
+                let result = MyMath.simpleSin(newAngle);
+            }else
+            {
+                if(angle < 271)
+                {// 181 - 270
+                    let newAngle = angle - 180;
+                    let result = MyMath.simpleSin(newAngle);
+                    let result = -result;
+                }else
+                {
+                    if(angle < 360)
+                    {//271 - 359
+                        let newAngle = angle - 270;
+                        let newAngle = 90 - newAngle;
+                        let result = MyMath.simpleSin(newAngle);
+                        let result = -result;
+                    }else
+                    {//out of range
+                        let result = -1000;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    function int cos(int angle){
+        var int result, newAngle;
+
+        if(angle <91)
+        {//0 - 90
+            let newAngle = 90 - angle;
+            let result = MyMath.simpleSin(newAngle);
+        }else
+        {
+            if(angle < 181)
+            {// 91 - 180
+                let newAngle = angle - 90;
+                let result = MyMath.simpleSin(newAngle);
+                let result = -result;
+            }else
+            {
+                if(angle < 271)
+                {// 181 - 270
+                    let newAngle = angle - 180;
+                    let newAngle = 90 - newAngle;
+                    let result = MyMath.simpleSin(newAngle);
+                    let result = -result;
+                }else
+                {
+                    if(angle < 360)
+                    {//271 - 359
+                        let newAngle = angle - 270;
+                        let result = MyMath.simpleSin(newAngle);
+                    }else
+                    {//out of range
+                        let result = -1000;
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    function int simpleSin(int angle){
+        return angle / 9;
+        // if(angle < 5){//0 - 4
+        //     return 0;
+        // }else{
+        //     if(angle < 10){//5 - 9
+        //         return 1;
+        //     }
+        // }else{
+        //     if(angle < 15){//10 - 14
+        //         return 2;
+        //     }
+        // }else{
+        //     if(angle < 20){//15 - 19
+        //         return 3;
+        //     }
+        // }else{
+        //     if(angle < 25){//20 - 24
+        //        return 4;
+        //     }
+        // }else{
+        //     if(angle < 30){//25 - 29
+        //         return 5;
+        //     }
+        // }else{
+        //     if(angle < 35){//30 - 34
+        //        return 5;
+        //     }
+        // }else{
+        //     if(angle < 40){//35 - 39
+        //         return 6;
+        //     }
+        // }else{
+        //     if(angle < 45){//40 - 44
+        //         return 7;
+        //     }
+        // }else{
+        //     if(angle < 50){//45 - 49
+        //         return 7;
+        //     }
+        // }else{
+        //     if(angle < 55){//50 - 54
+        //         return 8;
+        //     }
+        // }else{
+        //     if(angle < 60){//55 - 59
+        //         return 8;
+        //     }
+        // }else{
+        //     if(angle < 65){//60 - 64
+        //         return 9;
+        //     }
+        // }else{
+        //     if(angle < 70){//65 - 69
+        //         return 9;
+        //     }
+        // }else{
+        //     if(angle < 75){//70 - 74
+        //         return 10;
+        //     }
+        // }else{
+        //     if(angle < 80){//75 - 79
+        //         return 10;
+        //     }
+        // }else{
+        //     if(angle < 85){//80 - 84
+        //         return 10;
+        //     }
+        // }else{
+        //     if(angle < 90){//85 - 89
+        //         return 10;
+        //     }
+        // }else{
+        //     return 10;
+        // }
+    }
+
+}

@@ -1,0 +1,106 @@
+/**
+ * The Square class implements a graphic square. A graphic square 
+ * has a location on the screen and a size. It also has methods 
+ * for drawing, erasing, moving on the screen, and changing its size.
+ */
+class Ball {
+
+    // Location on the screen
+    field int x, y, radius;
+    field int speed, direction;
+
+    /** Constructs a new square with a given location and size. */
+    constructor Ball new(int Ax, int Ay, int Aradius, int dir, int sp) {
+        let x = Ax;
+        let y = Ay;
+        let radius = Aradius;
+        let direction = dir;
+        let speed = sp;
+
+        do draw();
+
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the ball on the screen. */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawCircle(x, y, radius);
+        return;
+    }
+
+    /** Erases the ball from the screen. */
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawCircle(x, y, radius);
+        return;
+    }
+
+    method void updatePosition(){
+        do erase();
+
+        let x = x + (MyMath.cos(direction) * speed);
+        let y = y + (MyMath.sin(direction) * speed);
+
+        if((x - radius) < 0){//parede esquerda
+            let x = radius;
+            if(direction < 181){//90 - 180 esquerda baixo
+                //0 - 90 direita baixo
+                let direction = 90 - (direction - 90);
+            }else{//181 - 270 esquerda alto
+                //270 - 360 direita alto
+                let direction = 630 - (direction + 90);//360+270
+            }
+            //let direction = 0;//direita
+        } 
+        else{
+            if(x + radius > 511){//parede direita
+                let x = 511 - radius;
+                if(direction < 91){//0 - 90 direita baixo
+                    //90 - 180 esquerda baixo
+                    let direction = 270 - (direction + 90);//180+90
+                }else{//270 - 360 direita alto
+                    //180 - 270 esquerda alto
+                    let direction = 450 - (direction - 90);//270+180
+                }
+                //let direction = 180;//esquerda
+            }
+        }
+
+        if((y - radius) < 0){//teto
+            let y = radius;
+            if(direction < 271){//180 - 270 esquerda alto
+                //90 - 180 esquerda baixo
+                let direction = 270 - (direction - 90);
+            }else{//270 - 360 direita alto
+                //0 - 90 direita baixo
+                let direction = 90 - (direction  - 270);//no overflow
+            }
+            //let direction = 90;//baixo
+        } 
+        else{
+            if(y + radius > 255){//chao
+                let y = 255 - radius;
+                if(direction < 91){//0 - 90 direita baixo
+                    //270 - 360 direita alto
+                    let direction = 630 - (direction + 270);
+                    //80 -> 340 -> 290
+                }else{//90 - 180 esquerda baixo
+                    //180 - 270 esquerda alto
+                    let direction = 450 - (direction + 90);
+                }
+                //let direction = 270;//cima
+            }
+        }
+
+        do draw();
+        return;
+    }
+
+}

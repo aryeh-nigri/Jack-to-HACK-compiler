@@ -1,0 +1,87 @@
+class BouncingGame{
+
+    field Array balls;
+    field int size;
+
+    constructor BouncingGame new(int Asize){
+        let size = Asize;
+        do Random.seed(101);
+        if(size < 1){
+            let size = Random.between(30, 80);
+        }
+        let balls = Array.new(size);
+        do initArray();
+        return this;
+    }
+
+    method void initArray(){
+        var int x, y, rad, dir, sp, i;
+        let x = 256;
+        let y = 128;
+
+        // let rad = 10;
+        // let dir = 50;
+        // let sp = 1;
+
+        let i = 0;
+        while(i < size){
+            // if(i = (size - 1)){
+            //     let rad = 40;
+            //     let sp = 1;
+            // }
+
+
+            let sp = Random.between(1, 8);
+            let dir = Random.between(0, 360);
+            let rad = Random.between(10, 20);
+
+            let balls[i] = Ball.new(x, y, rad, dir, sp);
+
+
+            // let rad = rad + 2;
+            // if(rad > 20){
+            //     let rad = 10;
+            //     let sp = 3;
+            // }
+
+            // let dir = dir + 51;//dir;
+            // if(dir > 360){
+            //     let dir = dir - 360;
+            //     let sp = 1;
+            // }
+
+            // let sp = sp + sp;
+            // if(sp > 9){
+            //     let sp = sp - 9;
+            // }
+
+            let i = i + 1;
+        }
+
+        return;
+    }
+
+    method void dispose() {
+        do balls.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    method void run(){
+        var int i;
+        var Ball b;
+
+        while(true){
+            let i = 0;
+            while(i < size){
+                let b = balls[i];
+                do b.updatePosition();
+                let i = i + 1;
+            }
+            do Sys.wait(100);
+        }
+
+        return;
+    }
+
+}
