@@ -44,6 +44,7 @@ JackCompiler <- R6Class("JackCompiler",
             } else {
                 ## iterate throw every file, and compile it
                 for(jackFile in jackFiles){
+                    print(paste("FILE :", basename(jackFile)))
                     # print(jackFile)
                     inputFile <- file(jackFile, "r")
                     outputFileName <- gsub("\\.jack", ".vm", jackFile)

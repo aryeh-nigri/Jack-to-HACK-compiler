@@ -148,7 +148,7 @@ CompilationEngine <- R6Class("CompilationEngine",
         self$symbolTable$startSubroutine()
 
         ## for method this is the first argument
-        if (self$tokenizer$keyWord() == "METHOD") {
+        if (keyword == "METHOD") {
            self$symbolTable$define("this", self$currentClass, "ARG")
         }
 
@@ -272,8 +272,6 @@ CompilationEngine <- R6Class("CompilationEngine",
             return()
         }
 
-        type <- ""
-
         ## there is parameter, at least one varName
         self$tokenizer$pointerBack()
         repeat{
@@ -340,7 +338,7 @@ CompilationEngine <- R6Class("CompilationEngine",
         self$compileVarDec()
     },
 
-    compileStatements = function() {},
+    # compileStatements = function() {},
 
     ## Compiles a do statement.
     ## 'do' subroutineCall ';'
@@ -381,7 +379,7 @@ CompilationEngine <- R6Class("CompilationEngine",
            objName <- name
            ## subroutineName
            self$tokenizer$advance()
-           ## System.out.println("subroutineName:" + tokenizer.identifier());
+           
            if (self$tokenizer$tokenType() != "IDENTIFIER"){
                self$throwException("Expected identifier")
            }
@@ -391,7 +389,7 @@ CompilationEngine <- R6Class("CompilationEngine",
            ## check for if it is built-in type
            type <- self$symbolTable$typeOf(objName) 
 
-           if (type == "int" || type == "boolean" || type == "char" || type == "void") {
+           if (type %in% c("int", "boolean", "char", "void")) {
                self$throwException("No built-in type")
            } else if (type == "") {
               name <- paste(objName, ".", name, sep="")
@@ -426,6 +424,7 @@ CompilationEngine <- R6Class("CompilationEngine",
         }
 
         varName <- self$tokenizer$identifier()
+        # print(paste("VARNAME :", varName))
 
         ## '[' or '='
         self$tokenizer$advance()
@@ -464,7 +463,7 @@ CompilationEngine <- R6Class("CompilationEngine",
         self$requireSymbol(';')
 
         if (expExist == TRUE) {
-            ## *(base+offset) = expression
+            ## *(base + offset) = expression
             ## pop expression value to temp
             self$vmWriter$writePop("temp", 0)
             ## pop base + index into 'that'
@@ -472,9 +471,11 @@ CompilationEngine <- R6Class("CompilationEngine",
             ## pop expression value into *(base + index)
             self$vmWriter$writePush("temp", 0)
             self$vmWriter$writePop("that", 0)
+            # print(paste("VARNEME :", varName))
         } else {
             ## pop expression value directly
             self$vmWriter$writePop(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
+            # print(paste("VARNEME :", varName))
         }
 
     },
@@ -717,13 +718,13 @@ CompilationEngine <- R6Class("CompilationEngine",
                 ## stringConstant new a string and append every char to the new stack
                 str <- self$tokenizer$stringVal()
 
-                self$vmWriter$writePush("constant", length(str))
+                strLetters <- strsplit(str, "")[[1]]
+
+                self$vmWriter$writePush("constant", length(strLetters))
                 self$vmWriter$writeCall("String.new", 1)
 
-                ## TODO write for loop in R
-                strLetters <- strsplit(str, "")[[1]]
                 for (i in 1:length(strLetters)) {
-                    self$vmWriter$writePush("constant", strLetters[i]) ## (int)str.charAt(i))
+                    self$vmWriter$writePush("constant", as.numeric(charToRaw(strLetters[i]))) ## (int)str.charAt(i))
                     self$vmWriter$writeCall("String.appendChar", 2)
                 }
 
@@ -831,7 +832,7 @@ CompilationEngine <- R6Class("CompilationEngine",
     ## Throws an exception, showing an error message and quiting.
     throwException = function(errorMessage) {
         print(errorMessage)
-        # quit()
+        quit()
     }
 
   )

@@ -115,7 +115,7 @@ SymbolTable <- R6Class("SymbolTable",
         } else if(has.key(name, self$subroutineSymbols)){
            return(self$subroutineSymbols[[name]])
         } else{
-            print(paste("SYMBOL NOT FOUND ON TABLES :", name))
+            # print(paste("SYMBOL NOT FOUND ON TABLES :", name))
             return(NULL)
         }
     }

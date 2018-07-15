@@ -91,14 +91,14 @@ JackTokenizer <- R6Class("JackTokenizer",
               }
 
               self$tokens <- c(self$tokens, number)
-          }
-          else if(grepl("[A-z0-9_]", character)){   ##   an alphanumeric character(not number, if passed \d)
+          }## antes   [A-z0-9_]
+          else if(grepl("[[:alnum:]_]", character)){   ##   an alphanumeric character(not number, if passed \d)
               word <- character
 
               repeat{
                   index <- index + 1
                   character <- allCharacters[index]
-                  if (grepl("[A-z0-9_]", character)) {
+                  if (grepl("[[:alnum:]_]", character)) {
                      word <- paste(word, character, sep="")
                   } else {
                      break
@@ -109,15 +109,15 @@ JackTokenizer <- R6Class("JackTokenizer",
           }
           else if(character == '"'){
             #   index <- writeStringConstant(allCharacters, index, currentOutputFile)
-            #   stringContent <- character
-              stringContent <- ""
+              stringContent <- character
+            #   stringContent <- ""
               ## TODO make sure if string should be with or without ""
 
               repeat{
                   index <- index + 1
                   character <- allCharacters[index]
                   if (character == '"') {
-                    #  stringContent <- paste(stringContent, character, sep="")
+                     stringContent <- paste(stringContent, character, sep="")
                      index <- index + 1   ##   jump the closing "
                      break
                   } else {
@@ -188,7 +188,8 @@ JackTokenizer <- R6Class("JackTokenizer",
         if (self$currentTokenType == "KEYWORD") {
            return(toupper(self$currentToken))
         } else {
-           print("Current token is not a keyword!")
+        #    print("Current token is not a keyword!")
+           return("")
         }
     },
 
@@ -199,7 +200,8 @@ JackTokenizer <- R6Class("JackTokenizer",
         #    return(substr(self$currentToken, 1, 1))      ## currentToken[0]
            return(self$currentToken)
         } else {
-           print("Current token is not a symbol!")
+        #    print("Current token is not a symbol!")
+           return("")
         }
     },
 
@@ -209,7 +211,8 @@ JackTokenizer <- R6Class("JackTokenizer",
         if (self$currentTokenType == "IDENTIFIER") {
            return(self$currentToken)
         } else {
-           print("Current token is not an identifier!")
+        #    print("Current token is not an identifier!")
+           return("")
         }
     },
 
@@ -219,7 +222,8 @@ JackTokenizer <- R6Class("JackTokenizer",
         if (self$currentTokenType == "INT_CONST") {
            return(self$currentToken)
         } else {
-           print("Current token is not an integer constant!")
+        #    print("Current token is not an integer constant!")
+           return("")
         }
     },
 
@@ -227,9 +231,11 @@ JackTokenizer <- R6Class("JackTokenizer",
     ## Should be called only when tokenType() is STRING_CONST.
     stringVal = function() {
         if (self$currentTokenType == "STRING_CONST") {
-           return(substr(self$currentToken, 2, length(self$currentToken) - 1))
+            size <- length(strsplit(self$currentToken, "")[[1]])
+           return(substr(self$currentToken, 2, size - 1))
         } else {
-           print("Current token is not a string constant!")
+        #    print("Current token is not a string constant!")
+           return("")
         }
     },
 
