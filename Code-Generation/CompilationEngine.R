@@ -26,7 +26,9 @@ CompilationEngine <- R6Class("CompilationEngine",
     symbolTable = NULL,
     currentClass = "character",
     currentSubroutine = "character",
-    labelIndex = "integer",
+    # labelIndex = "integer",
+    labelCounterIf = "integer",
+    labelCounterWhile = "integer",
 
     ## Creates a new compilation engine with the given input and output.
     ## The next routine called must be compileClass()
@@ -34,7 +36,9 @@ CompilationEngine <- R6Class("CompilationEngine",
       self$tokenizer <- JackTokenizer$new(inputFile)
       self$vmWriter <- VMWriter$new(outputFile)
       self$symbolTable <- SymbolTable$new()
-      self$labelIndex <- 0
+    #   self$labelIndex <- 0
+      self$labelCounterIf <- 0
+      self$labelCounterWhile <- 0
 
       self$compileClass()
     },
@@ -504,11 +508,12 @@ CompilationEngine <- R6Class("CompilationEngine",
     ## Compiles a while statement.
     ## 'while' '(' expression ')' '{' statements '}'
     compileWhile = function() {
-        continueLabel <- self$newLabel()
-        topLabel <- self$newLabel()
+        whileExpLabel <- paste("WHILE_EXP", self$labelCounterWhile, sep="")
+        whileEndLabel <- paste("WHILE_END", self$labelCounterWhile, sep="")
+        self$labelCounterWhile <- self$labelCounterWhile + 1
 
         ## top label for while loop
-        self$vmWriter$writeLabel(topLabel)
+        self$vmWriter$writeLabel(whileExpLabel)
 
         ## '('
         self$requireSymbol('(')
@@ -516,27 +521,59 @@ CompilationEngine <- R6Class("CompilationEngine",
         self$compileExpression()
         ## ')'
         self$requireSymbol(')')
+
         ## if ~(condition) go to continue label
         self$vmWriter$writeArithmetic("not")
-        self$vmWriter$writeIf(continueLabel)
+        self$vmWriter$writeIf(whileEndLabel)
+
         ## '{'
         self$requireSymbol('{')
         ## statements
         self$compileStatement()
         ## '}'
         self$requireSymbol('}')
+
         ## if (condition) go to top label
-        self$vmWriter$writeGoto(topLabel)
+        self$vmWriter$writeGoto(whileExpLabel)
         ## or continue
-        self$vmWriter$writeLabel(continueLabel)
+        self$vmWriter$writeLabel(whileEndLabel)
+
+        # self$labelIndex <- self$labelIndex + 1
     },
+    # compileWhile = function() {
+    #     continueLabel <- self$newLabel()
+    #     topLabel <- self$newLabel()
+
+    #     ## top label for while loop
+    #     self$vmWriter$writeLabel(topLabel)
+
+    #     ## '('
+    #     self$requireSymbol('(')
+    #     ## expression while condition: true or false
+    #     self$compileExpression()
+    #     ## ')'
+    #     self$requireSymbol(')')
+    #     ## if ~(condition) go to continue label
+    #     self$vmWriter$writeArithmetic("not")
+    #     self$vmWriter$writeIf(continueLabel)
+    #     ## '{'
+    #     self$requireSymbol('{')
+    #     ## statements
+    #     self$compileStatement()
+    #     ## '}'
+    #     self$requireSymbol('}')
+    #     ## if (condition) go to top label
+    #     self$vmWriter$writeGoto(topLabel)
+    #     ## or continue
+    #     self$vmWriter$writeLabel(continueLabel)
+    # },
 
     ## Returns a new label name, using the labelIndex.
-    newLabel = function() {
-        label <- paste("LABEL_", self$labelIndex, sep="")
-        self$labelIndex <- self$labelIndex + 1
-        return(label)
-    },
+    # newLabel = function() {
+    #     label <- paste("LABEL_", self$labelIndex, sep="")
+    #     self$labelIndex <- self$labelIndex + 1
+    #     return(label)
+    # },
 
     ## Compiles a return statement.
     ## ‘return’ expression? ';'
@@ -563,8 +600,10 @@ CompilationEngine <- R6Class("CompilationEngine",
     ## possibly with a trailing else clause.
     # 'if' '(' expression ')' '{' statements '}' ('else' '{' statements '}')?
     compileIf = function() {
-        elseLabel <- self$newLabel()
-        endLabel <- self$newLabel()
+        ifTrueLabel <- paste("IF_TRUE", self$labelCounterIf, sep="")
+        ifFalseLabel <- paste("IF_FALSE", self$labelCounterIf, sep="")
+        ifEndLabel <- paste("IF_END", self$labelCounterIf, sep="")
+        self$labelCounterIf <- self$labelCounterIf + 1
 
         ## '('
         self$requireSymbol('(')
@@ -572,34 +611,78 @@ CompilationEngine <- R6Class("CompilationEngine",
         self$compileExpression()
         ## ')'
         self$requireSymbol(')')
-        ## if ~(condition) go to else label
-        self$vmWriter$writeArithmetic("not")
-        self$vmWriter$writeIf(elseLabel)
+
+        self$vmWriter$writeIf(ifTrueLabel)
+        self$vmWriter$writeGoto(ifFalseLabel)
+        self$vmWriter$writeLabel(ifTrueLabel)
+
         ## '{'
         self$requireSymbol('{')
         ## statements
         self$compileStatement()
         ## '}'
         self$requireSymbol('}')
-        ## if condition after statement finishing, go to end label
-        self$vmWriter$writeGoto(endLabel)
 
-        self$vmWriter$writeLabel(elseLabel)
         ## check if there is 'else'
         self$tokenizer$advance()
         if (self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "ELSE") {
+            # ifEndLabel <- paste("IF_END", self$labelIndex, sep="")
+            self$vmWriter$writeGoto(ifEndLabel)
+            self$vmWriter$writeLabel(ifFalseLabel)
+
             ## '{'
             self$requireSymbol('{')
             ## statements
             self$compileStatement()
             ## '}'
             self$requireSymbol('}')
-        }else {
+
+            self$vmWriter$writeLabel(ifEndLabel)          
+        }else {   ##   only if
             self$tokenizer$pointerBack()
+            self$vmWriter$writeLabel(ifFalseLabel)
         }
 
-        self$vmWriter$writeLabel(endLabel)
+        # self$labelIndex <- self$labelIndex + 1
     },
+    # compileIf = function() {
+    #     elseLabel <- self$newLabel()
+    #     endLabel <- self$newLabel()
+
+    #     ## '('
+    #     self$requireSymbol('(')
+    #     ## expression
+    #     self$compileExpression()
+    #     ## ')'
+    #     self$requireSymbol(')')
+    #     ## if ~(condition) go to else label
+    #     self$vmWriter$writeArithmetic("not")
+    #     self$vmWriter$writeIf(elseLabel)
+    #     ## '{'
+    #     self$requireSymbol('{')
+    #     ## statements
+    #     self$compileStatement()
+    #     ## '}'
+    #     self$requireSymbol('}')
+    #     ## if condition after statement finishing, go to end label
+    #     self$vmWriter$writeGoto(endLabel)
+
+    #     self$vmWriter$writeLabel(elseLabel)
+    #     ## check if there is 'else'
+    #     self$tokenizer$advance()
+    #     if (self$tokenizer$tokenType() == "KEYWORD" & self$tokenizer$keyWord() == "ELSE") {
+    #         ## '{'
+    #         self$requireSymbol('{')
+    #         ## statements
+    #         self$compileStatement()
+    #         ## '}'
+    #         self$requireSymbol('}')
+    #     }else {
+    #         self$tokenizer$pointerBack()
+    #     }
+
+    #     self$vmWriter$writeLabel(endLabel)
+    # },
 
     ## Compiles an expression
     ## term (op term)*
