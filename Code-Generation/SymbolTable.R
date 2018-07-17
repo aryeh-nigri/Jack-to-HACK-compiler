@@ -110,10 +110,10 @@ SymbolTable <- R6Class("SymbolTable",
     ## Check if target symbol exists.
     lookUp = function(name) {
 
-        if (has.key(name, self$classSymbols)) {
-           return(self$classSymbols[[name]])
-        } else if(has.key(name, self$subroutineSymbols)){
-           return(self$subroutineSymbols[[name]])
+        if (has.key(name, self$subroutineSymbols)) {
+            return(self$subroutineSymbols[[name]])
+        } else if(has.key(name, self$classSymbols)) {
+            return(self$classSymbols[[name]])
         } else{
             # print(paste("SYMBOL NOT FOUND ON TABLES :", name))
             return(NULL)

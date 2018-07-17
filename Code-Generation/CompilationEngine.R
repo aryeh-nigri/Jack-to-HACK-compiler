@@ -420,7 +420,7 @@ CompilationEngine <- R6Class("CompilationEngine",
 
     ## Compiles a let statement
     ## 'let' varName ('[' ']')? '=' expression ';'
-    compileLet = function() {
+    compileLet = function() {   ## let diff = y - x;
         ## varName
         self$tokenizer$advance()
         if (self$tokenizer$tokenType() != "IDENTIFIER") {
@@ -440,17 +440,16 @@ CompilationEngine <- R6Class("CompilationEngine",
 
         ## '[' expression ']' , need to deal with array [base + offset]
         if (self$tokenizer$symbol() == '[') {
-
             expExist <- TRUE
-
-            ## push array variable,base address into stack
-            self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
 
             ## calc offset
             self$compileExpression()
 
             ## ']'
             self$requireSymbol(']')
+
+            ## push array variable,base address into stack
+            self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(varName)), self$symbolTable$indexOf(varName))
 
             ## base + offset
             self$vmWriter$writeArithmetic("add")
@@ -471,6 +470,7 @@ CompilationEngine <- R6Class("CompilationEngine",
             ## pop expression value to temp
             self$vmWriter$writePop("temp", 0)
             ## pop base + index into 'that'
+            # self$vmWriter$writePop("pointer", 0)
             self$vmWriter$writePop("pointer", 1)
             ## pop expression value into *(base + index)
             self$vmWriter$writePush("temp", 0)
@@ -764,14 +764,14 @@ CompilationEngine <- R6Class("CompilationEngine",
             self$tokenizer$advance()
             if (self$tokenizer$tokenType() == "SYMBOL" & self$tokenizer$symbol() == '[') {
                 ## this is an array entry
-
-                ## push array variable,base address into stack
-                self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(tempId)), self$symbolTable$indexOf(tempId))
-
                 ## expression
                 self$compileExpression()
                 ## ']'
                 self$requireSymbol(']')
+
+                ## push array variable,base address into stack
+                self$vmWriter$writePush(self$getSeg(self$symbolTable$kindOf(tempId)), self$symbolTable$indexOf(tempId))
+
 
                 ## base + offset
                 self$vmWriter$writeArithmetic("add")

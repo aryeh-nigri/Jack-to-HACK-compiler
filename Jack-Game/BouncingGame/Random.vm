@@ -33,12 +33,12 @@ push static 0
 return
 function Random.between 1
 push argument 1
-push static 0
+push argument 0
 sub
 pop local 0
 call Random.next 0
 push local 0
 call Random.mod 2
-push static 0
+push argument 0
 add
 return
