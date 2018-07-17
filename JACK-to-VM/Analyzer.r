@@ -1,4 +1,5 @@
 ## Aryeh Nigri
+## Moishe Fischbein
 
 ## Iterate throw xxxT.xml files in a folder and create a file xxx.xml
 ## for every tag, write it's correct tree tag into the xml file

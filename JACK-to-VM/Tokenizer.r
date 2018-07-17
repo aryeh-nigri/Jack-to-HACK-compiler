@@ -1,4 +1,5 @@
 ## Aryeh Nigri
+## Moishe Fischbein
 
 ## Iterate throw xxx.jack files in a folder and create a file xxxT.xml
 ## for every token, write it's correct tag into the xml file
